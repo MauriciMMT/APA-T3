@@ -92,15 +92,230 @@ $v_2$, y $v_1^\perp$ es normal (perpendicular) a $v_2$.
 
 #### Ejecución de los tests unitarios
 
-Inserte a continuación una captura de pantalla que muestre el resultado de ejecutar el
-fichero `algebra/vectores.py` con la opción *verbosa*, de manera que se muestre el
-resultado de la ejecución de los tests unitarios.
+```
+$ python algebra/vectores.py -v
+Trying:
+    v1 = Vector([1, 2, 3])
+Expecting nothing
+ok
+Trying:
+    v2 = Vector([4, 5, 6])
+Expecting nothing
+ok
+Trying:
+    v1 * 2
+Expecting:
+    Vector([2, 4, 6])
+ok
+Trying:
+    v1 * v2
+Expecting:
+    Vector([4, 10, 18])
+ok
+Trying:
+    v1 @ v2
+Expecting:
+    32
+ok
+Trying:
+    v1 = Vector([2, 1, 2])
+Expecting nothing
+ok
+Trying:
+    v2 = Vector([0.5, 1, 0.5])
+Expecting nothing
+ok
+Trying:
+    v1 // v2
+Expecting:
+    Vector([1.0, 2.0, 1.0])
+ok
+Trying:
+    v1 % v2
+Expecting:
+    Vector([1.0, -1.0, 1.0])
+ok
+Trying:
+    Vector([1, 2, 3]) * 2
+Expecting:
+    Vector([2, 4, 6])
+ok
+Trying:
+    Vector([1, 2, 3]) * Vector([4, 5, 6])
+Expecting:
+    Vector([4, 10, 18])
+ok
+Trying:
+    2 * Vector([1, 2, 3])
+Expecting:
+    Vector([2, 4, 6])
+ok
+Trying:
+    Vector([1, 2, 3]) @ Vector([4, 5, 6])
+Expecting:
+    32
+ok
+Trying:
+    Vector([2, 1, 2]) // Vector([0.5, 1, 0.5])
+Expecting:
+    Vector([1.0, 2.0, 1.0])
+ok
+Trying:
+    Vector([2, 1, 2]) % Vector([0.5, 1, 0.5])
+Expecting:
+    Vector([1.0, -1.0, 1.0])
+ok
+12 items had no tests:
+    __main__.Vector
+    __main__.Vector.__add__
+    __main__.Vector.__getitem__
+    __main__.Vector.__init__
+    __main__.Vector.__len__
+    __main__.Vector.__neg__
+    __main__.Vector.__repr__
+    __main__.Vector.__rfloordiv__
+    __main__.Vector.__rmatmul__
+    __main__.Vector.__rmod__
+    __main__.Vector.__str__
+    __main__.Vector.__sub__
+6 items passed all tests:
+   9 tests in __main__
+   1 tests in __main__.Vector.__floordiv__
+   1 tests in __main__.Vector.__matmul__
+   1 tests in __main__.Vector.__mod__
+   2 tests in __main__.Vector.__mul__
+   1 tests in __main__.Vector.__rmul__
+15 tests in 18 items.
+15 passed and 0 failed.
+Test passed.
+```
 
 #### Código desarrollado
 
-Inserte a continuación el código de los métodos desarrollados en esta tarea, usando los
-comandos necesarios para que se realice el realce sintáctico en Python del mismo (no
-vale insertar una imagen o una captura de pantalla, debe hacerse en formato *markdown*).
+```python
+def __mul__(self, other):
+    """
+    Multiplicación de un vector por un escalar o producto de Hadamard con otro vector.
+
+    Si `other` es un escalar (int o float), multiplica cada elemento del vector
+    por ese escalar. Si `other` es otro Vector, devuelve el producto de Hadamard
+    (multiplicación elemento a elemento).
+
+    Argumentos:
+        other: Escalar (int/float) o Vector.
+
+    Salida:
+        Nuevo Vector resultado de la operación.
+
+    >>> Vector([1, 2, 3]) * 2
+    Vector([2, 4, 6])
+    >>> Vector([1, 2, 3]) * Vector([4, 5, 6])
+    Vector([4, 10, 18])
+    """
+    if isinstance(other, (int, float)):
+        return Vector(a * other for a in self.vector)
+    return Vector(a * b for a, b in zip(self.vector, other.vector))
+
+def __rmul__(self, other):
+    """
+    Multiplicación por escalar con el escalar a la izquierda.
+
+    Argumentos:
+        other: Escalar (int/float).
+
+    Salida:
+        Nuevo Vector resultado de la multiplicación.
+
+    >>> 2 * Vector([1, 2, 3])
+    Vector([2, 4, 6])
+    """
+    return self.__mul__(other)
+
+def __matmul__(self, other):
+    """
+    Producto escalar (dot product) de dos vectores usando el operador @.
+
+    Argumentos:
+        other: Vector con el que calcular el producto escalar.
+
+    Salida:
+        Escalar resultado del producto escalar.
+
+    >>> Vector([1, 2, 3]) @ Vector([4, 5, 6])
+    32
+    """
+    return sum(a * b for a, b in zip(self.vector, other.vector))
+
+def __rmatmul__(self, other):
+    """
+    Producto escalar con el vector a la derecha.
+
+    Argumentos:
+        other: Vector con el que calcular el producto escalar.
+
+    Salida:
+        Escalar resultado del producto escalar.
+    """
+    return self.__matmul__(other)
+
+def __floordiv__(self, other):
+    """
+    Componente de self paralela (tangencial) a other usando el operador //.
+
+    Calcula v1_paralela = (v1 · v2 / |v2|²) * v2
+
+    Argumentos:
+        other: Vector de referencia al que se proyecta.
+
+    Salida:
+        Nuevo Vector con la componente paralela a `other`.
+
+    >>> Vector([2, 1, 2]) // Vector([0.5, 1, 0.5])
+    Vector([1.0, 2.0, 1.0])
+    """
+    return (self @ other) / (other @ other) * other
+
+def __rfloordiv__(self, other):
+    """
+    Componente paralela cuando self es el vector de referencia (other // self).
+
+    Argumentos:
+        other: Vector a descomponer.
+
+    Salida:
+        Nuevo Vector con la componente de `other` paralela a self.
+    """
+    return Vector(other).__floordiv__(self)
+
+def __mod__(self, other):
+    """
+    Componente de self perpendicular (normal) a other usando el operador %.
+
+    Calcula v1_perp = v1 - v1_paralela
+
+    Argumentos:
+        other: Vector de referencia respecto al que se obtiene la componente normal.
+
+    Salida:
+        Nuevo Vector con la componente perpendicular a `other`.
+
+    >>> Vector([2, 1, 2]) % Vector([0.5, 1, 0.5])
+    Vector([1.0, -1.0, 1.0])
+    """
+    return self - (self // other)
+
+def __rmod__(self, other):
+    """
+    Componente perpendicular cuando self es el vector de referencia (other % self).
+
+    Argumentos:
+        other: Vector a descomponer.
+
+    Salida:
+        Nuevo Vector con la componente de `other` perpendicular a self.
+    """
+    return Vector(other).__mod__(self)
+```
 
 #### Subida del resultado al repositorio GitHub y *pull-request*
 
